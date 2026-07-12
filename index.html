@@ -224,6 +224,7 @@
 
 <div class="footer-note">toque rápido no botão pra subir a serra</div>
 
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (function(){
   const screens = ['home','waiting','countdown','race','result'];
@@ -231,84 +232,113 @@
     screens.forEach(s => document.getElementById('screen-'+s).classList.toggle('hidden', s!==name));
   }
 
+  const ROOM_PREFIX = 'serra-race-'; // namespaced so it (mostly) avoids colliding with other PeerJS apps
+
+  let peer = null;
+  let conn = null;
   let roomCode = null;
-  let myRole = null; // 'p1' or 'p2'
-  let pollTimer = null;
-  let countdownTimer = null;
-  let raceLoopTimer = null;
+  let myRole = null; // 'p1' (host) or 'p2' (joiner)
   let myProgress = 0;
-  let lastWrite = 0;
   let raceFinished = false;
+  let raceStarted = false;
+  let lastSend = 0;
+  let countdownTimer = null;
 
-  function roomKey(code){ return 'race-room:' + code; }
+  function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
 
-  async function getRoom(code){
-    try{
-      const r = await window.storage.get(roomKey(code), true);
-      return r ? JSON.parse(r.value) : null;
-    }catch(e){ return null; }
-  }
-  async function setRoom(code, state){
-    try{
-      await window.storage.set(roomKey(code), JSON.stringify(state), true);
-      return true;
-    }catch(e){ return false; }
+  function send(msg){
+    if(conn && conn.open) conn.send(msg);
   }
 
   function randomCode(){
     return String(Math.floor(1000 + Math.random()*9000));
   }
 
-  function vibrate(ms){
-    if(navigator.vibrate) navigator.vibrate(ms);
+  function showConnError(msg){
+    const errEl = document.getElementById('join-error');
+    if(errEl) errEl.textContent = msg;
   }
 
-  function clearAllTimers(){
-    if(pollTimer) clearInterval(pollTimer);
-    if(countdownTimer) clearInterval(countdownTimer);
-    if(raceLoopTimer) clearInterval(raceLoopTimer);
-  }
-
-  // ---------- HOME ----------
-  document.getElementById('btn-create').addEventListener('click', async () => {
+  // ---------- HOME: CREATE ----------
+  document.getElementById('btn-create').addEventListener('click', () => {
     roomCode = randomCode();
     myRole = 'p1';
-    const initial = {
-      status:'waiting', p1Joined:true, p2Joined:false,
-      p1Progress:0, p2Progress:0, countdownStart:null, winner:null
-    };
-    await setRoom(roomCode, initial);
     document.getElementById('waiting-code').textContent = roomCode;
+    document.querySelector('#screen-waiting .subtitle').innerHTML = '<span class="pulse-dot"></span>aguardando oponente';
     show('waiting');
-    pollTimer = setInterval(hostWaitPoll, 500);
+
+    peer = new Peer(ROOM_PREFIX + roomCode);
+    peer.on('open', () => { /* ready to receive connection */ });
+    peer.on('connection', (c) => {
+      conn = c;
+      setupConnHandlers();
+      conn.on('open', () => {
+        // host decides when race starts
+        const startAt = Date.now() + 1800;
+        send({type:'countdown', startAt});
+        beginCountdown(startAt);
+      });
+    });
+    peer.on('error', (err) => {
+      if(err.type === 'unavailable-id'){
+        // extremely unlikely collision, just retry with a new code
+        peer.destroy();
+        document.getElementById('btn-create').click();
+      }
+    });
   });
 
+  // ---------- HOME: JOIN ----------
   document.getElementById('btn-show-join').addEventListener('click', () => {
     document.getElementById('join-form').classList.remove('hidden');
   });
 
-  document.getElementById('btn-join').addEventListener('click', async () => {
+  document.getElementById('btn-join').addEventListener('click', () => {
     const code = document.getElementById('input-code').value.trim();
-    const errEl = document.getElementById('join-error');
-    errEl.textContent = '';
-    if(code.length !== 4){ errEl.textContent = 'digite os 4 números do código'; return; }
-    const room = await getRoom(code);
-    if(!room){ errEl.textContent = 'sala não encontrada'; return; }
-    if(room.status !== 'waiting'){ errEl.textContent = 'essa corrida já começou'; return; }
+    showConnError('');
+    if(code.length !== 4){ showConnError('digite os 4 números do código'); return; }
     roomCode = code;
     myRole = 'p2';
-    room.p2Joined = true;
-    await setRoom(roomCode, room);
-    startCountdownWatch();
+
+    const joinBtn = document.getElementById('btn-join');
+    joinBtn.textContent = 'conectando...';
+    joinBtn.disabled = true;
+
+    peer = new Peer();
+    peer.on('open', () => {
+      conn = peer.connect(ROOM_PREFIX + roomCode, {reliable:true});
+      setupConnHandlers();
+      conn.on('open', () => {
+        joinBtn.textContent = 'entrar na sala';
+        joinBtn.disabled = false;
+        document.getElementById('waiting-code').textContent = roomCode;
+        document.querySelector('#screen-waiting .subtitle').innerHTML = '<span class="pulse-dot"></span>conectado! preparando corrida';
+        show('waiting');
+      });
+      conn.on('error', () => {
+        joinBtn.textContent = 'entrar na sala';
+        joinBtn.disabled = false;
+        showConnError('sala não encontrada ou expirada');
+      });
+    });
+    peer.on('error', (err) => {
+      joinBtn.textContent = 'entrar na sala';
+      joinBtn.disabled = false;
+      if(err.type === 'peer-unavailable'){
+        showConnError('sala não encontrada');
+      } else {
+        showConnError('erro de conexão, tente de novo');
+      }
+    });
   });
 
   document.getElementById('btn-cancel-wait').addEventListener('click', () => {
-    clearAllTimers();
+    teardown();
     show('home');
   });
 
   document.getElementById('btn-copy-code').addEventListener('click', () => {
-    if(navigator.clipboard){
+    if(navigator.clipboard && roomCode){
       navigator.clipboard.writeText(roomCode).then(()=>{
         const btn = document.getElementById('btn-copy-code');
         const old = btn.textContent;
@@ -318,43 +348,52 @@
     }
   });
 
-  // ---------- HOST WAITING ----------
-  async function hostWaitPoll(){
-    const room = await getRoom(roomCode);
-    if(room && room.p2Joined && room.status === 'waiting'){
-      clearInterval(pollTimer);
-      room.status = 'countdown';
-      room.countdownStart = Date.now() + 1500;
-      await setRoom(roomCode, room);
-      beginCountdown(room.countdownStart);
-    }
+  function teardown(){
+    if(countdownTimer) clearInterval(countdownTimer);
+    if(conn){ try{ conn.close(); }catch(e){} conn = null; }
+    if(peer){ try{ peer.destroy(); }catch(e){} peer = null; }
+    roomCode = null; myRole = null; myProgress = 0; raceFinished = false; raceStarted = false;
   }
 
-  // ---------- JOINER WATCH FOR COUNTDOWN ----------
-  function startCountdownWatch(){
-    show('waiting');
-    document.getElementById('waiting-code').textContent = roomCode;
-    document.querySelector('#screen-waiting .subtitle').innerHTML = '<span class="pulse-dot"></span>entrando na corrida';
-    pollTimer = setInterval(async () => {
-      const room = await getRoom(roomCode);
-      if(room && room.status === 'countdown' && room.countdownStart){
-        clearInterval(pollTimer);
-        beginCountdown(room.countdownStart);
+  // ---------- DATA CHANNEL HANDLERS ----------
+  function setupConnHandlers(){
+    conn.on('data', (msg) => {
+      if(msg.type === 'countdown'){
+        beginCountdown(msg.startAt);
+      } else if(msg.type === 'progress'){
+        updateTruckPosition('truck-theirs', 'pct-theirs', msg.value);
+      } else if(msg.type === 'finish'){
+        if(!raceFinished){
+          raceFinished = true;
+          showResult(msg.winner);
+        }
+      } else if(msg.type === 'rematch'){
+        beginCountdown(msg.startAt);
       }
-    }, 400);
+    });
+    conn.on('close', () => {
+      if(document.getElementById('screen-race').classList.contains('hidden') === false ||
+         document.getElementById('screen-result').classList.contains('hidden') === false){
+        // opponent left mid game
+      }
+    });
   }
 
   // ---------- COUNTDOWN ----------
   function beginCountdown(startAt){
     show('countdown');
+    myProgress = 0;
+    raceFinished = false;
+    raceStarted = false;
     const numEl = document.getElementById('countdown-num');
     const labelEl = document.getElementById('countdown-label');
     labelEl.textContent = 'preparar';
+    if(countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       const msLeft = startAt - Date.now();
       const secLeft = Math.ceil(msLeft/1000);
-      if(secLeft > 0){
-        numEl.textContent = secLeft;
+      if(msLeft > 700){
+        numEl.textContent = Math.max(secLeft,1);
         numEl.className = 'countdown-num display';
       } else if(msLeft > -700){
         numEl.textContent = 'VAI!';
@@ -370,6 +409,7 @@
   function beginRace(){
     myProgress = 0;
     raceFinished = false;
+    raceStarted = true;
     show('race');
     const myBadge = document.getElementById('my-badge');
     const theirBadge = document.getElementById('their-badge');
@@ -382,68 +422,30 @@
     updateTruckPosition('truck-theirs', 'pct-theirs', 0);
 
     const tapBtn = document.getElementById('btn-tap');
-    const onTap = (e) => {
+    tapBtn.onpointerdown = (e) => {
       e.preventDefault();
-      if(raceFinished) return;
+      if(raceFinished || !raceStarted) return;
       myProgress = Math.min(100, myProgress + 2);
       updateTruckPosition('truck-mine', 'pct-mine', myProgress);
       tapBtn.classList.add('pressed');
       setTimeout(()=>tapBtn.classList.remove('pressed'), 60);
       vibrate(8);
       const now = Date.now();
-      if(now - lastWrite > 120 || myProgress >= 100){
-        lastWrite = now;
-        pushProgress();
+      if(now - lastSend > 120 || myProgress >= 100){
+        lastSend = now;
+        send({type:'progress', value: myProgress});
       }
-      if(myProgress >= 100){
-        finishRace();
+      if(myProgress >= 100 && !raceFinished){
+        raceFinished = true;
+        send({type:'finish', winner: myRole});
+        showResult(myRole);
       }
     };
-    tapBtn.onpointerdown = onTap;
-
-    raceLoopTimer = setInterval(pollOpponent, 180);
   }
 
   function updateTruckPosition(truckId, pctId, pct){
     document.getElementById(truckId).style.bottom = (2 + pct*0.9) + '%';
     document.getElementById(pctId).textContent = Math.round(pct) + '%';
-  }
-
-  async function pushProgress(){
-    const room = await getRoom(roomCode);
-    if(!room) return;
-    if(myRole === 'p1') room.p1Progress = myProgress;
-    else room.p2Progress = myProgress;
-    await setRoom(roomCode, room);
-  }
-
-  async function pollOpponent(){
-    if(raceFinished) return;
-    const room = await getRoom(roomCode);
-    if(!room) return;
-    const theirProgress = myRole === 'p1' ? room.p2Progress : room.p1Progress;
-    updateTruckPosition('truck-theirs', 'pct-theirs', theirProgress || 0);
-
-    if(room.status === 'finished' && room.winner){
-      raceFinished = true;
-      clearInterval(raceLoopTimer);
-      showResult(room.winner);
-    }
-  }
-
-  async function finishRace(){
-    if(raceFinished) return;
-    raceFinished = true;
-    clearInterval(raceLoopTimer);
-    document.getElementById('btn-tap').onpointerdown = null;
-    const room = await getRoom(roomCode);
-    if(room && room.status !== 'finished'){
-      room.status = 'finished';
-      room.winner = myRole;
-      if(myRole === 'p1') room.p1Progress = 100; else room.p2Progress = 100;
-      await setRoom(roomCode, room);
-    }
-    showResult(myRole);
   }
 
   function showResult(winner){
@@ -455,23 +457,17 @@
       : 'o oponente chegou primeiro dessa vez';
   }
 
-  document.getElementById('btn-rematch').addEventListener('click', async () => {
-    const room = await getRoom(roomCode);
-    if(!room) { show('home'); return; }
-    room.status = 'countdown';
-    room.p1Progress = 0;
-    room.p2Progress = 0;
-    room.winner = null;
-    room.countdownStart = Date.now() + 1500;
-    await setRoom(roomCode, room);
-    beginCountdown(room.countdownStart);
+  document.getElementById('btn-rematch').addEventListener('click', () => {
+    const startAt = Date.now() + 1800;
+    send({type:'rematch', startAt});
+    beginCountdown(startAt);
   });
 
   document.getElementById('btn-home').addEventListener('click', () => {
-    clearAllTimers();
-    roomCode = null; myRole = null;
+    teardown();
     document.getElementById('join-form').classList.add('hidden');
     document.getElementById('input-code').value = '';
+    showConnError('');
     show('home');
   });
 
