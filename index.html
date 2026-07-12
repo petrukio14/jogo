@@ -3,195 +3,90 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Sobe a Serra — Corrida</title>
+<title>Cobra Arena — Online</title>
 <style>
   :root{
-    --sky-top:#161233;
-    --sky-mid:#4a2a5c;
-    --sky-horizon:#ff6b35;
-    --asphalt:#2a2938;
-    --asphalt-line:#3a394c;
-    --rail:#ffd23f;
-    --rail-dark:#b8951a;
-    --p1:#00d9ff;
-    --p1-dark:#0891a8;
-    --p1-glass:#bdf6ff;
-    --p2:#ff2e63;
-    --p2-dark:#b81f47;
-    --p2-glass:#ffc2d1;
-    --cream:#f4ecd8;
-    --ink:#161233;
+    --bg-top:#0d0b1f; --bg-bot:#1c1440;
+    --grid-line:#241c4d; --arena:#150f33;
+    --p1:#00e5ff; --p1-dark:#0891a8; --p1-glow:rgba(0,229,255,0.55);
+    --p2:#ff2e8f; --p2-dark:#b81f5f; --p2-glow:rgba(255,46,143,0.55);
+    --food:#ffd23f; --food-glow:rgba(255,210,63,0.6);
+    --cream:#f4ecd8; --ink:#0d0b1f;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
   html,body{height:100%; margin:0; overscroll-behavior:none;}
   body{
     font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
-    background:linear-gradient(180deg,var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 100%);
-    color:var(--cream);
-    min-height:100vh;
-    display:flex; flex-direction:column;
-    overflow:hidden;
-    position:fixed; inset:0;
+    background:linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 100%);
+    color:var(--cream); min-height:100vh; display:flex; flex-direction:column;
+    overflow:hidden; position:fixed; inset:0;
   }
   .display{ font-family:'Arial Black', Impact, sans-serif; letter-spacing:0.5px; }
-  .mono{ font-family:'Courier New', monospace; letter-spacing:4px; }
-
-  .screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; position:relative; z-index:2;}
+  .screen{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; }
   .hidden{ display:none !important; }
 
-  .ridge{
-    position:fixed; left:0; right:0; bottom:0; height:30vh; z-index:1; pointer-events:none;
-    background:
-      radial-gradient(120% 100% at 20% 100%, rgba(255,107,53,0.18), transparent 60%),
-      linear-gradient(160deg, transparent 40%, rgba(22,18,51,0.55) 41%),
-      linear-gradient(20deg, transparent 40%, rgba(22,18,51,0.4) 41%);
-    background-size:100% 100%, 60% 100%, 60% 100%;
-    background-position: 0 0, -10% 100%, 110% 100%;
-    background-repeat:no-repeat;
-    opacity:0.7;
-  }
-  .cloud{ position:fixed; z-index:1; opacity:0.18; background:var(--cream); border-radius:50px; filter:blur(1px); pointer-events:none;}
-  .cloud1{ width:120px; height:26px; top:8%; left:-10%; animation:drift 38s linear infinite; }
-  .cloud2{ width:80px; height:18px; top:16%; left:-20%; animation:drift 52s linear infinite 6s; }
-  @keyframes drift{ from{transform:translateX(0);} to{transform:translateX(140vw);} }
+  h1.title{ font-size:clamp(28px,9vw,40px); margin:0 0 4px; color:var(--cream); text-shadow:0 0 18px var(--p1-glow); }
+  .subtitle{ font-size:13px; opacity:0.7; margin-bottom:34px; letter-spacing:1px; text-transform:uppercase; }
 
-  h1.title{ font-size:clamp(28px,9vw,42px); margin:0 0 4px; color:var(--cream); text-shadow:0 2px 0 rgba(0,0,0,0.35);}
-  .subtitle{ font-size:14px; opacity:0.75; margin-bottom:36px; letter-spacing:1px; text-transform:uppercase;}
-
-  .btn{
-    font-family:inherit; font-weight:700; font-size:17px;
-    padding:16px 28px; border-radius:14px; border:none;
-    cursor:pointer; width:100%; max-width:320px; margin:8px 0;
-    transition:transform 0.08s ease;
-  }
+  .btn{ font-family:inherit; font-weight:700; font-size:17px; padding:16px 28px; border-radius:14px; border:none; cursor:pointer; width:100%; max-width:320px; margin:8px 0; transition:transform 0.08s ease; }
   .btn:active{ transform:scale(0.96); }
-  .btn-primary{ background:var(--rail); color:var(--ink); box-shadow:0 4px 0 var(--rail-dark);}
-  .btn-primary:active{ box-shadow:0 1px 0 var(--rail-dark); }
-  .btn-outline{ background:transparent; color:var(--cream); border:2px solid rgba(244,236,216,0.4);}
+  .btn-primary{ background:var(--food); color:var(--ink); box-shadow:0 4px 0 #b8951a; }
+  .btn-primary:active{ box-shadow:0 1px 0 #b8951a; }
+  .btn-outline{ background:transparent; color:var(--cream); border:2px solid rgba(244,236,216,0.35); }
   .btn-small{ width:auto; padding:10px 20px; font-size:14px; }
 
-  input.code-input{
-    font-family:'Courier New', monospace; font-size:28px; letter-spacing:10px;
-    text-align:center; width:100%; max-width:220px; padding:14px 10px;
-    border-radius:12px; border:2px solid rgba(244,236,216,0.4);
-    background:rgba(0,0,0,0.25); color:var(--cream); margin-bottom:16px;
-  }
-  input.code-input:focus{ outline:none; border-color:var(--rail); }
-
-  .code-box{
-    font-family:'Courier New', monospace; font-size:52px; letter-spacing:14px;
-    background:rgba(0,0,0,0.28); border:2px dashed var(--rail);
-    border-radius:16px; padding:18px 10px 18px 28px; margin:18px 0 8px;
-  }
-  .hint{ font-size:13px; opacity:0.7; margin-top:6px; }
+  input.code-input{ font-family:'Courier New', monospace; font-size:28px; letter-spacing:10px; text-align:center; width:100%; max-width:220px; padding:14px 10px; border-radius:12px; border:2px solid rgba(244,236,216,0.35); background:rgba(0,0,0,0.3); color:var(--cream); margin-bottom:16px; }
+  input.code-input:focus{ outline:none; border-color:var(--food); }
+  .code-box{ font-family:'Courier New', monospace; font-size:52px; letter-spacing:14px; background:rgba(0,0,0,0.32); border:2px dashed var(--food); border-radius:16px; padding:18px 10px 18px 28px; margin:18px 0 8px; }
+  .hint{ font-size:13px; opacity:0.65; margin-top:6px; }
   .error-msg{ color:#ff8a8a; font-size:14px; margin-top:10px; min-height:18px; }
-
-  .pulse-dot{ width:10px; height:10px; border-radius:50%; background:var(--rail); display:inline-block; margin-right:8px; animation:pulse 1.1s infinite ease-in-out; }
+  .pulse-dot{ width:10px; height:10px; border-radius:50%; background:var(--food); display:inline-block; margin-right:8px; animation:pulse 1.1s infinite ease-in-out; }
   @keyframes pulse{ 0%,100%{opacity:0.3;} 50%{opacity:1;} }
 
-  .countdown-num{ font-size:120px; font-weight:900; color:var(--rail); text-shadow:0 4px 0 rgba(0,0,0,0.3); }
-  .countdown-go{ font-size:64px; color:var(--p1); }
-  .countdown-round{ font-size:13px; opacity:0.65; letter-spacing:1px; text-transform:uppercase; margin-top:18px; }
+  .countdown-num{ font-size:120px; font-weight:900; color:var(--food); text-shadow:0 0 30px var(--food-glow); }
+  .countdown-go{ font-size:60px; color:var(--p1); text-shadow:0 0 24px var(--p1-glow); }
 
-  /* ---- Race screen ---- */
-  #screen-race{ justify-content:flex-start; padding:0; }
-  .race-header{
-    width:100%; display:flex; justify-content:space-between; align-items:center;
-    font-size:13px; padding:10px 14px 8px; box-sizing:border-box; z-index:3;
+  /* ---- Game screen ---- */
+  #screen-game{ justify-content:flex-start; padding:0; }
+  .game-header{ width:100%; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; box-sizing:border-box; }
+  .score-chip{ display:flex; align-items:center; gap:7px; font-weight:700; font-family:'Courier New', monospace; font-size:17px; }
+  .dot-p1{ width:11px; height:11px; border-radius:50%; background:var(--p1); box-shadow:0 0 8px var(--p1); }
+  .dot-p2{ width:11px; height:11px; border-radius:50%; background:var(--p2); box-shadow:0 0 8px var(--p2); }
+  .vs-label{ font-size:11px; opacity:0.5; letter-spacing:2px; text-transform:uppercase; }
+
+  .arena-wrap{ flex:1; width:100%; display:flex; align-items:center; justify-content:center; min-height:0; padding:4px 8px; }
+  #arena{ background:var(--arena); border-radius:12px; box-shadow:0 0 0 3px rgba(244,236,216,0.12), 0 0 24px rgba(0,0,0,0.4); }
+
+  .dpad-wrap{ width:100%; padding:10px 0 18px; display:flex; justify-content:center; flex-shrink:0; }
+  .dpad{ display:grid; grid-template-columns:64px 64px 64px; grid-template-rows:64px 64px 64px; gap:6px; }
+  .dpad button{
+    border:none; border-radius:14px; background:rgba(244,236,216,0.1); border:2px solid rgba(244,236,216,0.25);
+    color:var(--cream); font-size:26px; display:flex; align-items:center; justify-content:center;
+    touch-action:manipulation;
   }
-  .score-chip{ display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; font-weight:700; }
-  .score-chip.mine{ background:rgba(0,0,0,0.28); border:2px solid; }
-  .dot-p1{ width:10px; height:10px; border-radius:50%; background:var(--p1); box-shadow:0 0 6px var(--p1);}
-  .dot-p2{ width:10px; height:10px; border-radius:50%; background:var(--p2); box-shadow:0 0 6px var(--p2);}
-  .score-num{ font-family:'Courier New',monospace; font-size:16px; }
-  .round-label{ font-size:11px; opacity:0.6; text-transform:uppercase; letter-spacing:1px; }
+  .dpad button:active{ background:rgba(255,210,63,0.35); border-color:var(--food); }
+  .dpad .up{ grid-column:2; grid-row:1; } .dpad .left{ grid-column:1; grid-row:2; }
+  .dpad .right{ grid-column:3; grid-row:2; } .dpad .down{ grid-column:2; grid-row:3; }
+  .dpad .mid{ grid-column:2; grid-row:2; opacity:0; pointer-events:none; }
 
-  .track-wrap{ width:100%; flex:1; display:flex; gap:8px; padding:0 10px; min-height:0; }
-  .lane{
-    position:relative; flex:1; border-radius:10px 10px 0 0; overflow:hidden;
-    background:repeating-linear-gradient(180deg, var(--asphalt) 0 26px, var(--asphalt-line) 26px 30px);
-    box-shadow:inset 0 0 0 3px rgba(255,210,63,0.2);
-  }
-  .lane-rail-l, .lane-rail-r{ position:absolute; top:0; bottom:0; width:5px; background:repeating-linear-gradient(180deg, var(--rail) 0 14px, transparent 14px 24px); }
-  .lane-rail-l{ left:3px; } .lane-rail-r{ right:3px; }
-
-  .finish-line{ position:absolute; top:6%; left:0; right:0; height:14px; background:repeating-linear-gradient(90deg, var(--cream) 0 8px, var(--ink) 8px 16px); box-shadow:0 0 12px rgba(244,236,216,0.5); }
-  .finish-flag{ position:absolute; top:-2%; left:50%; transform:translateX(-50%); font-size:22px; }
-
-  .progress-pct{ position:absolute; top:24px; left:0; right:0; text-align:center; font-family:'Courier New',monospace; font-size:11px; opacity:0.55; z-index:2;}
-
-  /* ---- Truck ---- */
-  .truck{ position:absolute; left:50%; bottom:2%; width:46px; height:64px; transform:translate(-50%, 50%); transition:bottom 0.12s linear; }
-  .truck .shadow{ position:absolute; bottom:-6px; left:6px; width:34px; height:10px; background:rgba(0,0,0,0.35); border-radius:50%; filter:blur(2px); }
-  .truck .bed{ position:absolute; top:0; left:3px; width:40px; height:26px; border-radius:5px 5px 2px 2px; }
-  .truck .bed::before{ content:''; position:absolute; top:5px; left:4px; right:4px; height:2px; background:rgba(0,0,0,0.25); box-shadow:0 6px 0 rgba(0,0,0,0.25), 0 12px 0 rgba(0,0,0,0.25); }
-  .truck .cab{ position:absolute; top:22px; left:0; width:46px; height:30px; border-radius:6px; }
-  .truck .windshield{ position:absolute; top:27px; left:8px; width:30px; height:12px; border-radius:3px; opacity:0.85; }
-  .truck .light{ position:absolute; top:47px; width:7px; height:5px; border-radius:2px; background:#fff6c8; box-shadow:0 0 6px #fff6c8; }
-  .truck .light.l{ left:5px; } .truck .light.r{ right:5px; }
-  .truck .wheel{ position:absolute; top:20px; width:6px; height:14px; border-radius:3px; background:#1a1a1a; border:1px solid #555; }
-  .truck .wheel.w1{ left:-3px; } .truck .wheel.w2{ right:-3px; }
-  .truck .wheel.w3{ top:44px; left:-3px; } .truck .wheel.w4{ top:44px; right:-3px; }
-  .truck .badge-icon{ position:absolute; top:4px; left:50%; transform:translateX(-50%); font-size:11px; }
-
-  .truck.p1 .bed, .truck.p1 .cab{ background:linear-gradient(180deg, var(--p1) 0%, var(--p1-dark) 100%); }
-  .truck.p1 .windshield{ background:var(--p1-glass); }
-  .truck.p2 .bed, .truck.p2 .cab{ background:linear-gradient(180deg, var(--p2) 0%, var(--p2-dark) 100%); }
-  .truck.p2 .windshield{ background:var(--p2-glass); }
-
-  /* ---- Tap zone: big, edge-to-edge, thumb friendly ---- */
-  .tap-zone{
-    width:100%; height:30vh; min-height:190px; position:relative;
-    background:linear-gradient(180deg, var(--rail) 0%, #f0bd2e 100%);
-    border-top:4px solid var(--rail-dark);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    touch-action:manipulation; overflow:hidden; flex-shrink:0;
-  }
-  .tap-zone::before{
-    content:''; position:absolute; inset:0;
-    background:repeating-linear-gradient(90deg, rgba(0,0,0,0.03) 0 2px, transparent 2px 40px);
-  }
-  .tap-label{ font-family:'Arial Black', Impact, sans-serif; font-size:clamp(26px,8vw,36px); color:var(--ink); letter-spacing:1px; z-index:2; }
-  .tap-sub{ font-size:12px; color:var(--ink); opacity:0.65; text-transform:uppercase; letter-spacing:2px; margin-top:4px; z-index:2; }
-  .tap-arrows{ display:flex; gap:6px; margin-top:10px; z-index:2; }
-  .tap-arrows span{ font-size:20px; color:var(--ink); opacity:0.5; animation:bounceUp 1s infinite ease-in-out; }
-  .tap-arrows span:nth-child(2){ animation-delay:0.12s; }
-  .tap-arrows span:nth-child(3){ animation-delay:0.24s; }
-  @keyframes bounceUp{ 0%,100%{ transform:translateY(0); opacity:0.3;} 50%{ transform:translateY(-6px); opacity:0.8;} }
-  .tap-zone.pressed{ background:linear-gradient(180deg, #f0bd2e 0%, var(--rail) 100%); }
-
-  .float-pop{
-    position:absolute; font-family:'Arial Black', Impact, sans-serif; font-size:18px; color:var(--ink);
-    opacity:0.85; pointer-events:none; z-index:3; animation:floatUp 0.6s ease-out forwards;
-  }
-  @keyframes floatUp{ from{ transform:translateY(0) scale(1); opacity:0.9;} to{ transform:translateY(-46px) scale(1.3); opacity:0; } }
-
-  /* ---- Round / match result ---- */
-  .result-title{ font-size:34px; margin-bottom:6px; }
-  .result-sub{ opacity:0.8; margin-bottom:18px; }
+  .result-title{ font-size:32px; margin-bottom:6px; }
+  .result-sub{ opacity:0.75; margin-bottom:22px; font-size:14px; }
   .winner-icon{ font-size:56px; margin-bottom:10px; }
-  .score-big{ font-family:'Courier New',monospace; font-size:40px; letter-spacing:6px; margin-bottom:22px; }
-  .score-big .sp1{ color:var(--p1); } .score-big .sp2{ color:var(--p2); }
-  .next-hint{ font-size:13px; opacity:0.65; margin-top:6px; }
-
+  .score-big{ font-family:'Courier New',monospace; font-size:38px; letter-spacing:6px; margin-bottom:24px; }
+  .score-big .sp1{ color:var(--p1); text-shadow:0 0 10px var(--p1-glow);} .score-big .sp2{ color:var(--p2); text-shadow:0 0 10px var(--p2-glow);}
   .row{ display:flex; gap:10px; width:100%; max-width:320px; }
   .row .btn{ flex:1; }
-
-  .footer-note{ position:fixed; bottom:6px; left:0; right:0; text-align:center; font-size:11px; opacity:0.4; z-index:3;}
+  .footer-note{ position:fixed; bottom:6px; left:0; right:0; text-align:center; font-size:11px; opacity:0.35; }
 </style>
 </head>
 <body>
-<div class="ridge"></div>
-<div class="cloud cloud1"></div>
-<div class="cloud cloud2"></div>
 
 <!-- HOME -->
 <div id="screen-home" class="screen">
-  <h1 class="title display">SOBE A SERRA</h1>
-  <div class="subtitle">corrida de caminhão · melhor de 5</div>
+  <h1 class="title display">COBRA ARENA</h1>
+  <div class="subtitle">cobrinha online · 1 contra 1 · mesma tela</div>
   <button class="btn btn-primary" id="btn-create">Criar sala</button>
   <button class="btn btn-outline" id="btn-show-join">Entrar com código</button>
-
   <div id="join-form" class="hidden" style="margin-top:18px; width:100%; display:flex; flex-direction:column; align-items:center;">
     <input type="text" inputmode="numeric" maxlength="4" placeholder="0000" class="code-input" id="input-code">
     <button class="btn btn-primary" id="btn-join">Entrar na sala</button>
@@ -199,7 +94,7 @@
   </div>
 </div>
 
-<!-- WAITING (host) -->
+<!-- WAITING -->
 <div id="screen-waiting" class="screen hidden">
   <div class="subtitle"><span class="pulse-dot"></span>aguardando oponente</div>
   <div class="code-box" id="waiting-code">0000</div>
@@ -210,110 +105,63 @@
 
 <!-- COUNTDOWN -->
 <div id="screen-countdown" class="screen hidden">
-  <div class="subtitle" id="countdown-label">preparar</div>
+  <div class="subtitle">preparar</div>
   <div class="countdown-num display" id="countdown-num">3</div>
-  <div class="countdown-round" id="countdown-round">corrida 1 de até 5</div>
 </div>
 
-<!-- RACE -->
-<div id="screen-race" class="screen hidden">
-  <div class="race-header">
-    <div class="score-chip"><span class="dot-p1"></span><span class="score-num" id="score-p1">0</span></div>
-    <div class="round-label" id="round-label">corrida 1</div>
-    <div class="score-chip"><span class="score-num" id="score-p2">0</span><span class="dot-p2"></span></div>
+<!-- GAME -->
+<div id="screen-game" class="screen hidden">
+  <div class="game-header">
+    <div class="score-chip"><span class="dot-p1"></span><span id="score-p1">3</span></div>
+    <div class="vs-label">cobra arena</div>
+    <div class="score-chip"><span id="score-p2">3</span><span class="dot-p2"></span></div>
   </div>
-  <div class="track-wrap">
-    <div class="lane" id="lane-mine">
-      <div class="lane-rail-l"></div><div class="lane-rail-r"></div>
-      <div class="finish-line"></div><div class="finish-flag">🏁</div>
-      <div class="progress-pct" id="pct-mine">0%</div>
-      <div class="truck" id="truck-mine">
-        <div class="shadow"></div>
-        <div class="bed"></div><div class="cab"></div><div class="windshield"></div>
-        <div class="light l"></div><div class="light r"></div>
-        <div class="wheel w1"></div><div class="wheel w2"></div><div class="wheel w3"></div><div class="wheel w4"></div>
-        <div class="badge-icon" id="badge-mine"></div>
-      </div>
-    </div>
-    <div class="lane" id="lane-theirs">
-      <div class="lane-rail-l"></div><div class="lane-rail-r"></div>
-      <div class="finish-line"></div><div class="finish-flag">🏁</div>
-      <div class="progress-pct" id="pct-theirs">0%</div>
-      <div class="truck" id="truck-theirs">
-        <div class="shadow"></div>
-        <div class="bed"></div><div class="cab"></div><div class="windshield"></div>
-        <div class="light l"></div><div class="light r"></div>
-        <div class="wheel w1"></div><div class="wheel w2"></div><div class="wheel w3"></div><div class="wheel w4"></div>
-        <div class="badge-icon" id="badge-theirs"></div>
-      </div>
+  <div class="arena-wrap"><canvas id="arena"></canvas></div>
+  <div class="dpad-wrap">
+    <div class="dpad">
+      <button class="up" id="btn-up">▲</button>
+      <button class="left" id="btn-left">◀</button>
+      <div class="mid"></div>
+      <button class="right" id="btn-right">▶</button>
+      <button class="down" id="btn-down">▼</button>
     </div>
   </div>
-  <div class="tap-zone" id="tap-zone">
-    <div class="tap-label">TOCA PRA ACELERAR</div>
-    <div class="tap-sub">quanto mais rápido, mais sobe</div>
-    <div class="tap-arrows"><span>▲</span><span>▲</span><span>▲</span></div>
-  </div>
 </div>
 
-<!-- ROUND RESULT (between races in the series) -->
-<div id="screen-round-result" class="screen hidden">
-  <div class="winner-icon" id="round-icon">🏁</div>
-  <div class="result-title display" id="round-title">VOCÊ VENCEU A CORRIDA</div>
-  <div class="score-big"><span class="sp1" id="round-score-p1">0</span> — <span class="sp2" id="round-score-p2">0</span></div>
-  <div class="next-hint"><span class="pulse-dot"></span>próxima corrida já vai começar...</div>
-</div>
-
-<!-- MATCH RESULT -->
+<!-- RESULT -->
 <div id="screen-result" class="screen hidden">
-  <div class="winner-icon">🏆</div>
-  <div class="result-title display" id="result-title">VOCÊ VENCEU A SÉRIE</div>
-  <div class="score-big"><span class="sp1" id="match-score-p1">3</span> — <span class="sp2" id="match-score-p2">1</span></div>
-  <div class="row">
-    <button class="btn btn-primary" id="btn-rematch">nova série</button>
-  </div>
+  <div class="winner-icon" id="result-icon">🏆</div>
+  <div class="result-title display" id="result-title">VOCÊ VENCEU</div>
+  <div class="result-sub" id="result-sub">a outra cobra bateu na parede</div>
+  <div class="score-big"><span class="sp1" id="final-p1">3</span> — <span class="sp2" id="final-p2">3</span></div>
+  <div class="row"><button class="btn btn-primary" id="btn-rematch">jogar de novo</button></div>
   <button class="btn btn-outline btn-small" id="btn-home">sair da sala</button>
 </div>
 
-<div class="footer-note">toque rápido na área amarela pra subir a serra</div>
+<div class="footer-note">use as setas pra guiar sua cobra</div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (function(){
-  const screens = ['home','waiting','countdown','race','round-result','result'];
-  function show(name){
-    screens.forEach(s => document.getElementById('screen-'+s).classList.toggle('hidden', s!==name));
-  }
+  const screens = ['home','waiting','countdown','game','result'];
+  function show(name){ screens.forEach(s => document.getElementById('screen-'+s).classList.toggle('hidden', s!==name)); }
 
-  const ROOM_PREFIX = 'serra-race-';
-  const WIN_TARGET = 3;
+  const ROOM_PREFIX = 'cobra-arena-';
+  const COLS = 15, ROWS = 21;
 
-  let peer = null;
-  let conn = null;
-  let roomCode = null;
-  let myRole = null; // 'p1' (host) or 'p2' (joiner)
-  let myProgress = 0;
-  let raceFinished = false;
-  let raceStarted = false;
-  let lastSend = 0;
-  let countdownTimer = null;
-  let matchScore = {p1:0, p2:0};
-  let roundNumber = 1;
+  let peer=null, conn=null, roomCode=null, myRole=null;
+  let countdownTimer=null;
 
-  function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
-  function send(msg){ if(conn && conn.open) conn.send(msg); }
   function randomCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
-  function showConnError(msg){ const el = document.getElementById('join-error'); if(el) el.textContent = msg; }
-  function otherRole(){ return myRole === 'p1' ? 'p2' : 'p1'; }
+  function send(msg){ if(conn && conn.open) conn.send(msg); }
+  function showConnError(msg){ const el=document.getElementById('join-error'); if(el) el.textContent = msg; }
 
-  // ---------- HOME: CREATE ----------
+  // ================= CONNECTION (host = authoritative simulator) =================
   document.getElementById('btn-create').addEventListener('click', () => {
-    roomCode = randomCode();
-    myRole = 'p1';
-    matchScore = {p1:0, p2:0}; roundNumber = 1;
+    roomCode = randomCode(); myRole = 'p1';
     document.getElementById('waiting-code').textContent = '····';
     document.querySelector('#screen-waiting .subtitle').innerHTML = '<span class="pulse-dot"></span>gerando sala';
     show('waiting');
-
     peer = new Peer(ROOM_PREFIX + roomCode);
     setupPeerLifecycle(peer);
     peer.on('open', () => {
@@ -321,32 +169,17 @@
       document.querySelector('#screen-waiting .subtitle').innerHTML = '<span class="pulse-dot"></span>aguardando oponente';
     });
     peer.on('connection', (c) => {
-      conn = c;
-      setupConnHandlers();
-      conn.on('open', () => {
-        const startAt = Date.now() + 1800;
-        send({type:'countdown', startAt, score: matchScore, round: roundNumber});
-        beginCountdown(startAt, roundNumber);
-      });
+      conn = c; setupConnHandlers();
+      conn.on('open', () => { const startAt = Date.now()+1800; send({type:'countdown', startAt}); beginCountdown(startAt); });
     });
-    peer.on('error', (err) => {
-      if(err.type === 'unavailable-id'){
-        peer.destroy();
-        document.getElementById('btn-create').click();
-      }
-    });
+    peer.on('error', (err) => { if(err.type === 'unavailable-id'){ peer.destroy(); document.getElementById('btn-create').click(); } });
   });
 
-  function setupPeerLifecycle(p){
-    p.on('disconnected', () => { if(!p.destroyed) p.reconnect(); });
-  }
+  function setupPeerLifecycle(p){ p.on('disconnected', () => { if(!p.destroyed) p.reconnect(); }); }
   document.addEventListener('visibilitychange', () => {
-    if(document.visibilityState === 'visible' && peer && !peer.destroyed && peer.disconnected){
-      peer.reconnect();
-    }
+    if(document.visibilityState === 'visible' && peer && !peer.destroyed && peer.disconnected) peer.reconnect();
   });
 
-  // ---------- HOME: JOIN ----------
   document.getElementById('btn-show-join').addEventListener('click', () => {
     document.getElementById('join-form').classList.remove('hidden');
   });
@@ -355,33 +188,21 @@
     const code = document.getElementById('input-code').value.trim();
     showConnError('');
     if(code.length !== 4){ showConnError('digite os 4 números do código'); return; }
-    roomCode = code;
-    myRole = 'p2';
-    matchScore = {p1:0, p2:0}; roundNumber = 1;
-
+    roomCode = code; myRole = 'p2';
     const joinBtn = document.getElementById('btn-join');
-    joinBtn.textContent = 'conectando...';
-    joinBtn.disabled = true;
-
+    joinBtn.textContent = 'conectando...'; joinBtn.disabled = true;
     peer = new Peer();
     setupPeerLifecycle(peer);
-    peer.on('open', () => { attemptConnect(0); });
+    peer.on('open', () => attemptConnect(0));
     peer.on('error', (err) => {
-      if(err.type !== 'peer-unavailable'){
-        joinBtn.textContent = 'entrar na sala';
-        joinBtn.disabled = false;
-        showConnError('erro de conexão, tente de novo');
-      }
+      if(err.type !== 'peer-unavailable'){ joinBtn.textContent='entrar na sala'; joinBtn.disabled=false; showConnError('erro de conexão, tente de novo'); }
     });
-
     function attemptConnect(attempt){
       conn = peer.connect(ROOM_PREFIX + roomCode, {reliable:true});
       let settled = false;
       setupConnHandlers();
       conn.on('open', () => {
-        settled = true;
-        joinBtn.textContent = 'entrar na sala';
-        joinBtn.disabled = false;
+        settled = true; joinBtn.textContent='entrar na sala'; joinBtn.disabled=false;
         document.getElementById('waiting-code').textContent = roomCode;
         document.querySelector('#screen-waiting .subtitle').innerHTML = '<span class="pulse-dot"></span>conectado! preparando corrida';
         show('waiting');
@@ -390,181 +211,255 @@
       setTimeout(() => { if(!settled && (!conn || !conn.open)) retryOrFail(attempt); }, 2500);
     }
     function retryOrFail(attempt){
-      if(attempt >= 2){
-        joinBtn.textContent = 'entrar na sala';
-        joinBtn.disabled = false;
-        showConnError('sala não encontrada. confira o código com quem criou a sala');
-        return;
-      }
+      if(attempt >= 2){ joinBtn.textContent='entrar na sala'; joinBtn.disabled=false; showConnError('sala não encontrada. confira o código'); return; }
       joinBtn.textContent = 'tentando de novo...';
-      setTimeout(() => attemptConnect(attempt + 1), 700);
+      setTimeout(() => attemptConnect(attempt+1), 700);
     }
   });
 
   document.getElementById('btn-cancel-wait').addEventListener('click', () => { teardown(); show('home'); });
-
   document.getElementById('btn-copy-code').addEventListener('click', () => {
     if(navigator.clipboard && roomCode){
       navigator.clipboard.writeText(roomCode).then(()=>{
-        const btn = document.getElementById('btn-copy-code');
-        const old = btn.textContent;
-        btn.textContent = 'copiado!';
-        setTimeout(()=>{ btn.textContent = old; }, 1200);
+        const btn = document.getElementById('btn-copy-code'); const old = btn.textContent;
+        btn.textContent = 'copiado!'; setTimeout(()=>{ btn.textContent = old; }, 1200);
       });
     }
   });
 
   function teardown(){
     if(countdownTimer) clearInterval(countdownTimer);
-    if(conn){ try{ conn.close(); }catch(e){} conn = null; }
-    if(peer){ try{ peer.destroy(); }catch(e){} peer = null; }
-    roomCode = null; myRole = null; myProgress = 0; raceFinished = false; raceStarted = false;
-    matchScore = {p1:0, p2:0}; roundNumber = 1;
+    stopGameLoop();
+    if(conn){ try{conn.close();}catch(e){} conn=null; }
+    if(peer){ try{peer.destroy();}catch(e){} peer=null; }
+    roomCode=null; myRole=null;
   }
 
-  // ---------- DATA CHANNEL HANDLERS ----------
   function setupConnHandlers(){
     conn.on('data', (msg) => {
-      if(msg.type === 'countdown'){
-        matchScore = msg.score || matchScore;
-        roundNumber = msg.round || roundNumber;
-        beginCountdown(msg.startAt, roundNumber);
-      } else if(msg.type === 'progress'){
-        updateTruckPosition('truck-theirs', 'pct-theirs', msg.value);
-      } else if(msg.type === 'finish'){
-        if(!raceFinished) handleFinish(msg.winner, msg.score);
-      }
+      if(msg.type === 'countdown'){ beginCountdown(msg.startAt); }
+      else if(msg.type === 'input'){ if(myRole==='p1') applyInput('p2', msg.dir); }
+      else if(msg.type === 'state'){ if(myRole==='p2') renderState(msg); }
+      else if(msg.type === 'over'){ if(myRole==='p2') showResult(msg.winner, msg.reason, msg.score); }
     });
   }
 
-  // ---------- COUNTDOWN ----------
-  function beginCountdown(startAt, round){
+  // ================= COUNTDOWN =================
+  function beginCountdown(startAt){
     show('countdown');
-    myProgress = 0; raceFinished = false; raceStarted = false;
-    document.getElementById('countdown-label').textContent = 'preparar';
-    document.getElementById('countdown-round').textContent = 'corrida ' + round + ' de até 5';
     const numEl = document.getElementById('countdown-num');
     if(countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       const msLeft = startAt - Date.now();
       const secLeft = Math.ceil(msLeft/1000);
-      if(msLeft > 700){
-        numEl.textContent = Math.max(secLeft,1);
-        numEl.className = 'countdown-num display';
-      } else if(msLeft > -700){
-        numEl.textContent = 'VAI!';
-        numEl.className = 'countdown-num display countdown-go';
-      } else {
-        clearInterval(countdownTimer);
-        beginRace();
-      }
+      if(msLeft > 700){ numEl.textContent = Math.max(secLeft,1); numEl.className='countdown-num display'; }
+      else if(msLeft > -700){ numEl.textContent = 'VAI!'; numEl.className='countdown-num display countdown-go'; }
+      else { clearInterval(countdownTimer); beginGame(); }
     }, 100);
   }
 
-  // ---------- RACE ----------
-  function beginRace(){
-    myProgress = 0; raceFinished = false; raceStarted = true;
-    show('race');
+  // ================= CANVAS SETUP =================
+  const canvas = document.getElementById('arena');
+  const ctx = canvas.getContext('2d');
+  let cellSize = 20;
 
-    const mineIcon = myRole === 'p1' ? '⚡' : '★';
-    const theirsIcon = myRole === 'p1' ? '★' : '⚡';
-    document.getElementById('truck-mine').className = 'truck ' + myRole;
-    document.getElementById('truck-theirs').className = 'truck ' + otherRole();
-    document.getElementById('badge-mine').textContent = mineIcon;
-    document.getElementById('badge-theirs').textContent = theirsIcon;
-    document.getElementById('round-label').textContent = 'corrida ' + roundNumber;
-    updateScoreUI();
+  function sizeCanvas(){
+    const wrap = document.querySelector('.arena-wrap');
+    const availW = wrap.clientWidth - 16;
+    const availH = wrap.clientHeight - 8;
+    cellSize = Math.floor(Math.min(availW / COLS, availH / ROWS));
+    cellSize = Math.max(cellSize, 10);
+    canvas.width = cellSize * COLS;
+    canvas.height = cellSize * ROWS;
+  }
+  window.addEventListener('resize', () => { if(!document.getElementById('screen-game').classList.contains('hidden')) sizeCanvas(); });
 
-    updateTruckPosition('truck-mine', 'pct-mine', 0);
-    updateTruckPosition('truck-theirs', 'pct-theirs', 0);
+  // ================= GAME STATE (host authoritative) =================
+  let snakes, food, dirs, pendingDirs, gameLoopTimer, running, score;
 
-    const zone = document.getElementById('tap-zone');
-    zone.onpointerdown = (e) => {
-      e.preventDefault();
-      if(raceFinished || !raceStarted) return;
-      myProgress = Math.min(100, myProgress + 2);
-      updateTruckPosition('truck-mine', 'pct-mine', myProgress);
-      zone.classList.add('pressed');
-      setTimeout(()=>zone.classList.remove('pressed'), 70);
-      spawnFloatPop(e, zone);
-      vibrate(8);
-      const now = Date.now();
-      if(now - lastSend > 120 || myProgress >= 100){
-        lastSend = now;
-        send({type:'progress', value: myProgress});
-      }
-      if(myProgress >= 100 && !raceFinished){
-        const newScore = {...matchScore};
-        newScore[myRole] = (newScore[myRole] || 0) + 1;
-        send({type:'finish', winner: myRole, score: newScore});
-        handleFinish(myRole, newScore);
-      }
+  function applyInput(role, dir){
+    const opposite = {up:'down', down:'up', left:'right', right:'left'};
+    const cur = dirs[role];
+    if(opposite[dir] === cur) return; // ignore instant reversal
+    pendingDirs[role] = dir;
+  }
+
+  function beginGame(){
+    show('game');
+    sizeCanvas();
+    score = {p1:3, p2:3};
+    document.getElementById('score-p1').textContent = score.p1;
+    document.getElementById('score-p2').textContent = score.p2;
+
+    // wire dpad -> local input
+    const dirMap = {'btn-up':'up','btn-down':'down','btn-left':'left','btn-right':'right'};
+    Object.keys(dirMap).forEach(id => {
+      document.getElementById(id).onpointerdown = (e) => {
+        e.preventDefault();
+        const dir = dirMap[id];
+        if(myRole === 'p1') applyInput('p1', dir);
+        else send({type:'input', dir});
+      };
+    });
+
+    if(myRole === 'p1') startHostSimulation();
+  }
+
+  function startHostSimulation(){
+    running = true;
+    snakes = {
+      p1: [{x:3,y:Math.floor(ROWS/2)},{x:2,y:Math.floor(ROWS/2)},{x:1,y:Math.floor(ROWS/2)}],
+      p2: [{x:COLS-4,y:Math.floor(ROWS/2)},{x:COLS-3,y:Math.floor(ROWS/2)},{x:COLS-2,y:Math.floor(ROWS/2)}]
     };
+    dirs = {p1:'right', p2:'left'};
+    pendingDirs = {p1:'right', p2:'left'};
+    food = spawnFood();
+    tick(); // draw initial frame
+    scheduleTick(160);
   }
 
-  function spawnFloatPop(e, zone){
-    const rect = zone.getBoundingClientRect();
-    const x = (e.clientX || rect.width/2) - rect.left;
-    const y = (e.clientY || rect.height/2) - rect.top;
-    const pop = document.createElement('div');
-    pop.className = 'float-pop';
-    pop.textContent = '+2';
-    pop.style.left = x + 'px';
-    pop.style.top = y + 'px';
-    zone.appendChild(pop);
-    setTimeout(() => pop.remove(), 620);
+  function scheduleTick(interval){
+    if(gameLoopTimer) clearTimeout(gameLoopTimer);
+    gameLoopTimer = setTimeout(() => {
+      if(!running) return;
+      stepSimulation();
+      if(running){
+        const speed = Math.max(90, 160 - (score.p1 + score.p2 - 6) * 3);
+        scheduleTick(speed);
+      }
+    }, interval);
   }
 
-  function updateTruckPosition(truckId, pctId, pct){
-    document.getElementById(truckId).style.bottom = (2 + pct*0.9) + '%';
-    document.getElementById(pctId).textContent = Math.round(pct) + '%';
+  function stopGameLoop(){ running = false; if(gameLoopTimer) clearTimeout(gameLoopTimer); }
+
+  function vec(dir){ return {up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0}}[dir]; }
+
+  function spawnFood(){
+    const occupied = new Set();
+    ['p1','p2'].forEach(r => snakes[r].forEach(seg => occupied.add(seg.x+','+seg.y)));
+    let fx, fy, tries=0;
+    do{
+      fx = Math.floor(Math.random()*COLS); fy = Math.floor(Math.random()*ROWS); tries++;
+    } while(occupied.has(fx+','+fy) && tries < 200);
+    return {x:fx, y:fy};
   }
 
-  function updateScoreUI(){
-    document.getElementById('score-p1').textContent = matchScore.p1 || 0;
-    document.getElementById('score-p2').textContent = matchScore.p2 || 0;
-  }
+  function stepSimulation(){
+    dirs.p1 = pendingDirs.p1; dirs.p2 = pendingDirs.p2;
+    const heads = {};
+    ['p1','p2'].forEach(r => {
+      const h = snakes[r][0]; const v = vec(dirs[r]);
+      heads[r] = {x:h.x+v.x, y:h.y+v.y};
+    });
 
-  function handleFinish(winner, score){
-    raceFinished = true;
-    matchScore = score;
-    updateScoreUI();
-    const iWon = winner === myRole;
+    const dead = {p1:false, p2:false};
+    ['p1','p2'].forEach(r => {
+      const h = heads[r];
+      if(h.x < 0 || h.x >= COLS || h.y < 0 || h.y >= ROWS){ dead[r]=true; return; }
+      const selfBody = snakes[r].slice(0, -1); // tail will move away unless growing; approximate check
+      if(selfBody.some(seg => seg.x===h.x && seg.y===h.y)) dead[r]=true;
+    });
+    // cross-collision with other snake bodies (check against pre-move full bodies)
+    ['p1','p2'].forEach(r => {
+      const other = r==='p1' ? 'p2' : 'p1';
+      const h = heads[r];
+      if(snakes[other].some(seg => seg.x===h.x && seg.y===h.y)) dead[r]=true;
+    });
+    // head-on collision (both moving into same cell)
+    if(heads.p1.x === heads.p2.x && heads.p1.y === heads.p2.y){ dead.p1 = true; dead.p2 = true; }
 
-    if((matchScore.p1 || 0) >= WIN_TARGET || (matchScore.p2 || 0) >= WIN_TARGET){
-      showMatchResult(winner);
+    if(dead.p1 || dead.p2){
+      running = false;
+      let winner = null, reason = '';
+      if(dead.p1 && dead.p2){ winner = 'draw'; reason = 'as duas cobras bateram ao mesmo tempo'; }
+      else if(dead.p1){ winner = 'p2'; reason = 'a cobra azul bateu'; }
+      else { winner = 'p1'; reason = 'a cobra rosa bateu'; }
+      send({type:'over', winner, reason, score});
+      showResult(winner, reason, score);
       return;
     }
 
-    show('round-result');
-    document.getElementById('round-icon').textContent = iWon ? '🎉' : '💨';
-    document.getElementById('round-title').textContent = iWon ? 'VOCÊ VENCEU A CORRIDA' : 'O OPONENTE VENCEU';
-    document.getElementById('round-score-p1').textContent = matchScore.p1 || 0;
-    document.getElementById('round-score-p2').textContent = matchScore.p2 || 0;
+    ['p1','p2'].forEach(r => {
+      const h = heads[r];
+      const ateFood = (h.x === food.x && h.y === food.y);
+      snakes[r].unshift(h);
+      if(ateFood){ score[r]++; food = spawnFood(); }
+      else { snakes[r].pop(); }
+    });
 
-    if(myRole === 'p1'){
-      setTimeout(() => {
-        roundNumber++;
-        const startAt = Date.now() + 1500;
-        send({type:'countdown', startAt, score: matchScore, round: roundNumber});
-        beginCountdown(startAt, roundNumber);
-      }, 2600);
-    }
+    tick();
+    send({type:'state', snakes, food, score});
+    document.getElementById('score-p1').textContent = score.p1;
+    document.getElementById('score-p2').textContent = score.p2;
   }
 
-  function showMatchResult(winner){
+  function renderState(msg){
+    snakes = msg.snakes; food = msg.food; score = msg.score;
+    document.getElementById('score-p1').textContent = score.p1;
+    document.getElementById('score-p2').textContent = score.p2;
+    tick();
+  }
+
+  function tick(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    for(let x=0;x<COLS;x++) for(let y=0;y<ROWS;y++){ if((x+y)%2===0) ctx.fillRect(x*cellSize,y*cellSize,cellSize,cellSize); }
+
+    // food
+    ctx.save();
+    ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 12;
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath();
+    ctx.arc(food.x*cellSize+cellSize/2, food.y*cellSize+cellSize/2, cellSize*0.32, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    drawSnake(snakes.p1, '#00e5ff', '#0891a8');
+    drawSnake(snakes.p2, '#ff2e8f', '#b81f5f');
+  }
+
+  function drawSnake(body, color, dark){
+    ctx.save();
+    ctx.shadowColor = color; ctx.shadowBlur = 8;
+    body.forEach((seg, i) => {
+      ctx.fillStyle = i === 0 ? color : dark;
+      const pad = i === 0 ? 1 : 2;
+      ctx.beginPath();
+      const r = i===0 ? cellSize*0.32 : cellSize*0.26;
+      roundRect(ctx, seg.x*cellSize+pad, seg.y*cellSize+pad, cellSize-pad*2, cellSize-pad*2, r);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  // ================= RESULT =================
+  function showResult(winner, reason, finalScore){
+    stopGameLoop();
     show('result');
-    const iWon = winner === myRole || (matchScore[myRole] >= WIN_TARGET);
-    document.getElementById('result-title').textContent = iWon ? 'VOCÊ VENCEU A SÉRIE' : 'VOCÊ PERDEU A SÉRIE';
-    document.getElementById('match-score-p1').textContent = matchScore.p1 || 0;
-    document.getElementById('match-score-p2').textContent = matchScore.p2 || 0;
+    const iWon = winner === myRole;
+    const icon = winner === 'draw' ? '🤝' : (iWon ? '🏆' : '💥');
+    document.getElementById('result-icon').textContent = icon;
+    document.getElementById('result-title').textContent =
+      winner === 'draw' ? 'EMPATE!' : (iWon ? 'VOCÊ VENCEU' : 'VOCÊ PERDEU');
+    document.getElementById('result-sub').textContent = reason || '';
+    document.getElementById('final-p1').textContent = finalScore.p1;
+    document.getElementById('final-p2').textContent = finalScore.p2;
   }
 
   document.getElementById('btn-rematch').addEventListener('click', () => {
-    matchScore = {p1:0, p2:0}; roundNumber = 1;
     const startAt = Date.now() + 1800;
-    send({type:'countdown', startAt, score: matchScore, round: roundNumber});
-    beginCountdown(startAt, roundNumber);
+    send({type:'countdown', startAt});
+    beginCountdown(startAt);
   });
 
   document.getElementById('btn-home').addEventListener('click', () => {
@@ -577,6 +472,14 @@
 
   document.getElementById('input-code').addEventListener('input', (e) => {
     e.target.value = e.target.value.replace(/\D/g,'').slice(0,4);
+  });
+
+  // keyboard support for desktop testing
+  document.addEventListener('keydown', (e) => {
+    const map = {ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right'};
+    const dir = map[e.key];
+    if(!dir || document.getElementById('screen-game').classList.contains('hidden')) return;
+    if(myRole === 'p1') applyInput('p1', dir); else send({type:'input', dir});
   });
 
 })();
